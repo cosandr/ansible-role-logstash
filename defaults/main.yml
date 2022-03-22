@@ -24,6 +24,7 @@ logstash_install_plugins:
   - logstash-filter-multiline
 
 logstash_config_template: ""
+logstash_provisioning_synced: true
 logstash_config_templates:
   - src: 01-beats-input.conf.j2
     dest: 01-beats-input.conf

@@ -9,6 +9,16 @@
   when: logstash_config_template
   notify: restart logstash
 
+- name: Register previously copied configuration files
+  find:
+    paths: "/etc/logstash/conf.d"
+    patterns:
+      - "*.conf"
+    excludes:
+      - 02-local-syslog-input.conf
+  register: _config_present
+  when: logstash_provisioning_synced
+
 - name: Create Logstash configuration files.
   template:
     src: "{{ item.src }}"
@@ -17,6 +27,7 @@
     group: root
     mode: 0644
   loop: "{{ logstash_config_templates }}"
+  register: _config_copied
   notify: restart logstash
 
 - name: Create Logstash filters.
@@ -27,6 +38,7 @@
     group: root
     mode: 0644
   loop: "{{ logstash_filter_files }}"
+  register: _filters_copied
   notify: restart logstash
 
 - name: Create Logstash configuration file for local syslog.
@@ -45,3 +57,16 @@
     state: absent
   when: not logstash_monitor_local_syslog
   notify: restart logstash
+
+- name: Set list facts
+  set_fact:
+    _config_present_list: "{{ _config_present | json_query('files[*].path') | default([]) }}"
+    _config_copied_list: "{{ (_config_copied.results + _filters_copied.results) | json_query('[*].dest') | default([]) }}"
+  when: logstash_provisioning_synced
+
+- name: Remove configs not present on deployer machine (synchronize)
+  file:
+    path: "{{ item }}"
+    state: absent
+  with_items: "{{ _config_present_list | difference( _config_copied_list ) }}"
+  when: logstash_provisioning_synced
