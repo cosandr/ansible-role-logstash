@@ -22,3 +22,17 @@ logstash_enabled_on_boot: true
 logstash_install_plugins:
   - logstash-input-beats
   - logstash-filter-multiline
+
+logstash_config_template: ""
+logstash_config_templates:
+  - src: 01-beats-input.conf.j2
+    dest: 01-beats-input.conf
+  - src: 30-elasticsearch-output.conf.j2
+    dest: 30-elasticsearch-output.conf
+
+logstash_filter_files:
+  - filters/10-syslog.conf
+  - filters/11-nginx.conf
+  - filters/12-apache.conf
+  - filters/14-solr.conf
+  - filters/15-drupal.conf
